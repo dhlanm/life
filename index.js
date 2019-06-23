@@ -6,6 +6,13 @@ var canvas = $('#game')[0];
 var ctx = canvas.getContext("2d")
 var h = canvas.height;
 var w = canvas.width;
+var cX = canvas.width / tilesize; 
+var cY = canvas.height / tilesize;
+
+//thanks js
+Number.prototype.mod = function(n) {
+  return ((this%n)+n)%n;
+};
 
 
 surrounded = function(tiles, x, y) {
@@ -14,6 +21,19 @@ surrounded = function(tiles, x, y) {
          (x == 0 ? true : tiles[x-1][y]) && 
          (y == 0 ? true : tiles[x][y-1])
 } 
+
+function validate(g, x, y) {
+  var adj = 0;
+  for(i = -1; i <= 1; i++) {
+    for(j = -1; j <= 1; j++) {
+      if(i==0 && j==0) continue;
+      adj += g[(x+i).mod(cX)][(y+j).mod(cY)];
+    }
+  }
+  if(!g[x][y]) return adj == 3
+  return 2 <= adj && adj <= 3;
+
+}
 
 function drawGrid() {
   for(x = 0; x <= w; x += tilesize) {
@@ -31,24 +51,7 @@ function drawGrid() {
   ctx.stroke();
 }
 
-function iterate(rule) {
-  var newGrid = $.extend(true, [], grid);
-  for (x = 0; x < w / tilesize; x += 1) {
-    for (y = 0; y < h / tilesize; y += 1) {
-      if(grid[x][y]) {
-        if(rule(grid, x, y)) {
-          newGrid[x][y] = 0;
-        }
-      } else {
-        if(!rule(grid, x, y) && x != (w / tilesize) - 1) {
-          newGrid[x+1][y] = 1;
-        }
-      }
-    }
-  }
-  grid = $.extend(true, [], newGrid);
-	ctx.clearRect(0, 0, w, h);
-  drawGrid()
+function drawLife() {
   for (x = 0; x < w / tilesize; x += 1) {
     for (y = 0; y < h / tilesize; y += 1) {
       if (grid[x][y]) {
@@ -62,6 +65,24 @@ function iterate(rule) {
   }
 }
 
+
+function iterate() {
+  var newGrid = $.extend(true, [], grid);
+  for (x = 0; x < w / tilesize; x += 1) {
+    for (y = 0; y < h / tilesize; y += 1) {
+      newGrid[x][y] = +validate(grid, x, y)
+    }
+  }
+  grid = $.extend(true, [], newGrid);
+  draw();
+}
+
+function draw() {
+  ctx.clearRect(0, 0, w, h);
+  drawGrid();
+  drawLife();  
+}
+
 drawGrid();
 
 $('#game').click(function(e) {
@@ -73,15 +94,12 @@ $('#game').click(function(e) {
   
   if(grid[x2][y2]) return;
   grid[x2][y2] = 1;
-
-  
-  iterate(surrounded);
-
+  draw();
 });
 
 $('body').keyup(function(e){
    if(e.keyCode == 32){
        // user has pressed space
-       iterate(surrounded);
+       iterate();
    }
 });
