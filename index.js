@@ -8,6 +8,8 @@ var h = canvas.height;
 var w = canvas.width;
 var cX = canvas.width / tilesize; 
 var cY = canvas.height / tilesize;
+var intervalID;
+var running = false;
 
 //thanks js
 Number.prototype.mod = function(n) {
@@ -36,6 +38,7 @@ function validate(g, x, y) {
 }
 
 function drawGrid() {
+  ctx.beginPath();
   for(x = 0; x <= w; x += tilesize) {
     if(x < w) {
       grid.push(new Array(h/tilesize).fill(0));
@@ -49,6 +52,7 @@ function drawGrid() {
   }
   ctx.strokeStyle = "black";
   ctx.stroke();
+  ctx.closePath();
 }
 
 function drawLife() {
@@ -67,13 +71,16 @@ function drawLife() {
 
 
 function iterate() {
-  var newGrid = $.extend(true, [], grid);
-  for (x = 0; x < w / tilesize; x += 1) {
-    for (y = 0; y < h / tilesize; y += 1) {
-      newGrid[x][y] = +validate(grid, x, y)
+  requestAnimationFrame(iterate);
+  if(running) {
+    var newGrid = $.extend(true, [], grid);
+    for (x = 0; x < w / tilesize; x += 1) {
+      for (y = 0; y < h / tilesize; y += 1) {
+        newGrid[x][y] = +validate(grid, x, y)
+      }
     }
+    grid = $.extend(true, [], newGrid);
   }
-  grid = $.extend(true, [], newGrid);
   draw();
 }
 
@@ -83,7 +90,7 @@ function draw() {
   drawLife();  
 }
 
-drawGrid();
+iterate()
 
 $('#game').click(function(e) {
 
@@ -99,7 +106,7 @@ $('#game').click(function(e) {
 
 $('body').keyup(function(e){
    if(e.keyCode == 32){
-       // user has pressed space
-       iterate();
+     running = !running;
    }
+
 });
